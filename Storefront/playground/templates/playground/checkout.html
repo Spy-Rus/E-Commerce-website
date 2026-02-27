@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout | Storefront{% endblock %}
+
+{% block content %}
+
+<h1 class="text-3xl font-semibold text-white mb-10 text-center">
+  Checkout
+</h1>
+
+<div class="bg-gray-800 border border-gray-700 p-8 rounded-2xl shadow-lg max-w-3xl mx-auto">
+
+  <!-- Order Summary -->
+  <h2 class="text-2xl font-semibold text-white mb-6">
+    Order Summary
+  </h2>
+
+  <div class="divide-y divide-gray-700">
+
+    {% for item in items %}
+      <div class="flex justify-between py-4">
+
+        <div>
+          <p class="font-medium text-white">
+            {{ item.product.title }}
+          </p>
+
+          <p class="text-sm text-gray-400">
+            ₹{{ item.product.get_current_price }} × {{ item.quantity }}
+          </p>
+        </div>
+
+        <p class="font-semibold text-gray-200">
+          ₹{{ item.total }}
+        </p>
+
+      </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Total -->
+  <div class="flex justify-between text-xl font-semibold border-t border-gray-700 pt-6 mt-6 text-white">
+    <span>Total</span>
+    <span class="text-blue-400">₹{{ total }}</span>
+  </div>
+
+  <!-- Actions -->
+  <form method="post" class="mt-10">
+    {% csrf_token %}
+
+    <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg text-lg font-medium transition shadow">
+      Place Order
+    </button>
+  </form>
+
+  <a href="{% url 'playground:cart' %}"
+     class="block text-center mt-6 text-gray-400 hover:text-gray-300 transition">
+    ← Back to Cart
+  </a>
+
+</div>
+
+{% endblock %}

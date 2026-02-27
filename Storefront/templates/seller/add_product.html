@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Add Product{% endblock %}
+
+{% block content %}
+
+<div class="max-w-lg mx-auto mt-12 bg-gray-800 border border-gray-700 p-8 rounded-2xl shadow-lg">
+
+  <h1 class="text-3xl font-semibold text-white mb-6 text-center">
+    Add Product
+  </h1>
+
+  <form method="post"
+        enctype="multipart/form-data"
+        class="space-y-5">
+
+    {% csrf_token %}
+
+    {% for field in form %}
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">
+          {{ field.label }}
+        </label>
+
+        {{ field|add_class:"bg-gray-900 border border-gray-700 text-gray-200 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500" }}
+
+        {% if field.help_text %}
+          <p class="text-xs text-gray-500 mt-1">
+            {{ field.help_text }}
+          </p>
+        {% endif %}
+
+        {% if field.errors %}
+          <p class="text-red-400 text-xs mt-1">
+            {{ field.errors|striptags }}
+          </p>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-medium transition shadow">
+      Save Product
+    </button>
+
+  </form>
+
+</div>
+
+{% endblock %}
