@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+
+<h1 class="text-3xl font-semibold text-white mb-10">
+  My Orders
+</h1>
+
+{% if orders %}
+  <div class="space-y-6">
+
+    {% for order in orders %}
+      <!-- ORDER CARD -->
+      <div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl shadow-md">
+
+        <div class="flex justify-between items-start mb-5">
+
+          <div>
+            <a href="{% url 'playground:order_detail' order.id %}"
+               class="font-semibold text-blue-400 hover:text-blue-300 transition">
+              Order #{{ order.id }}
+            </a>
+
+            <p class="text-sm text-gray-400 mt-1">
+              {{ order.created_at|date:"d M Y, H:i" }}
+            </p>
+          </div>
+
+          <p class="font-bold text-lg text-green-400">
+            ₹{{ order.total_price }}
+          </p>
+        </div>
+
+        <div class="border-t border-gray-700 pt-4 space-y-3">
+          {% for item in order.items.all %}
+            <div class="flex justify-between text-sm text-gray-300">
+              <span>
+                {{ item.product.name }} × {{ item.quantity }}
+              </span>
+              <span class="font-medium">
+                ₹{{ item.get_total_price }}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+
+      </div>
+    {% endfor %}
+
+  </div>
+{% else %}
+  <p class="text-gray-400">
+    You haven’t placed any orders yet.
+  </p>
+{% endif %}
+
+{% endblock %}

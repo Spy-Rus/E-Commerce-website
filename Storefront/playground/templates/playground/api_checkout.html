@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>API Checkout Test</title>
+</head>
+<body>
+  <h1>API Checkout</h1>
+
+  <button onclick="placeOrder()">Place Order via API</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    async function placeOrder() {
+      const response = await fetch('/api/orders/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+          items: [
+            { product_id: 1, quantity: 2 },
+            { product_id: 3, quantity: 1 }
+          ]
+        })
+      })
+
+      const data = await response.json()
+      document.getElementById('output').textContent =
+        JSON.stringify(data, null, 2)
+    }
+
+    function getCookie(name) {
+      let cookieValue = null
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';')
+        for (let cookie of cookies) {
+          cookie = cookie.trim()
+          if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(cookie.slice(name.length + 1))
+            break
+          }
+        }
+      }
+      return cookieValue
+    }
+  </script>
+</body>
+</html>

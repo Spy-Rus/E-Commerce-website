@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Products Test</title>
+</head>
+<body>
+    <h1>Products (from API)</h1>
+    <ul id="products"></ul>
+
+    <script>
+        fetch('/api/products/')
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('products');
+                data.forEach(product => {
+                    const li = document.createElement('li');
+                    li.textContent = `${product.title} - ₹${product.price}`;
+                    list.appendChild(li);
+                });
+            })
+            .catch(err => console.error(err));
+    </script>
+</body>
+</html>

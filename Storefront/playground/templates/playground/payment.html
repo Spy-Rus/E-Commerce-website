@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment | Storefront{% endblock %}
+
+{% block content %}
+
+<h1 class="text-3xl font-semibold text-white mb-10 text-center">
+  Payment
+</h1>
+
+<div class="max-w-xl mx-auto bg-gray-800 border border-gray-700 rounded-2xl p-8 shadow-lg">
+
+  <p class="text-gray-400 text-center mb-6">
+    You’re about to complete your purchase
+  </p>
+
+  <!-- Total Amount -->
+  <div class="flex justify-between items-center bg-gray-900 border border-gray-700 rounded-lg px-6 py-4 mb-8">
+    <span class="text-gray-300 font-medium">
+      Total Amount
+    </span>
+    <span class="text-2xl font-semibold text-green-400">
+      ₹{{ order.total_price }}
+    </span>
+  </div>
+
+  <!-- Payment Action -->
+  <form method="post" action="{% url 'playground:payment_success' order.id %}">
+    {% csrf_token %}
+
+    <button
+      class="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg text-lg font-medium transition shadow">
+      Pay Now
+    </button>
+  </form>
+
+</div>
+
+{% endblock %}

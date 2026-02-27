@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+{{ product.title }} | Storefront
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto py-12">
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-12 bg-gray-800 border border-gray-700 p-8 rounded-2xl shadow-lg">
+
+    <!-- PRODUCT IMAGE -->
+    <div>
+      {% if product.image %}
+        <img src="{{ product.image.url }}"
+             alt="{{ product.title }}"
+             class="w-full h-[420px] object-cover rounded-xl">
+      {% else %}
+        <div class="w-full h-[420px] bg-gray-700 flex items-center justify-center rounded-xl">
+          <span class="text-gray-400">No image available</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- PRODUCT INFO -->
+    <div class="flex flex-col justify-between">
+
+      <div>
+        <h1 class="text-4xl font-semibold text-white mb-4">
+          {{ product.title }}
+        </h1>
+
+        <p class="text-3xl text-green-400 font-semibold mb-6">
+          ₹{{ product.get_current_price }}
+        </p>
+
+        {% if product.description %}
+          <p class="text-gray-300 leading-relaxed mb-8">
+            {{ product.description }}
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="flex flex-wrap gap-4 mt-6">
+
+        <a href="{% url 'playground:add_to_cart' product.id %}"
+           class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-medium transition shadow">
+          Add to Cart
+        </a>
+
+        <a href="{% url 'playground:home' %}"
+           class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-8 py-3 rounded-lg text-lg transition">
+          Back to Shop
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
