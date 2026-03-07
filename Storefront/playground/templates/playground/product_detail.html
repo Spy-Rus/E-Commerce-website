@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}
-{{ product.title }} | Storefront
-{% endblock %}
+{% block title %}{{ product.title }} | Storefront{% endblock %}
 
 {% block content %}
 
@@ -28,28 +26,37 @@
     <div class="flex flex-col justify-between">
 
       <div>
-        <h1 class="text-4xl font-semibold text-white mb-4">
-          {{ product.title }}
-        </h1>
+        <h1 class="text-4xl font-semibold text-white mb-4">{{ product.title }}</h1>
 
         <p class="text-3xl text-green-400 font-semibold mb-6">
           ₹{{ product.get_current_price }}
         </p>
 
         {% if product.description %}
-          <p class="text-gray-300 leading-relaxed mb-8">
-            {{ product.description }}
-          </p>
+          <p class="text-gray-300 leading-relaxed mb-8">{{ product.description }}</p>
         {% endif %}
+      </div>
+
+      <!-- TOAST NOTIFICATION -->
+      <div id="toast"
+           class="hidden mb-4 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300">
       </div>
 
       <!-- ACTIONS -->
       <div class="flex flex-wrap gap-4 mt-6">
 
-        <a href="{% url 'playground:add_to_cart' product.id %}"
-           class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-medium transition shadow">
-          Add to Cart
-        </a>
+        {% if user.is_authenticated %}
+          <button id="add-to-cart-btn"
+                  data-product-id="{{ product.id }}"
+                  class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-medium transition shadow">
+            Add to Cart
+          </button>
+        {% else %}
+          <a href="{% url 'playground:login' %}?next={{ request.path }}"
+             class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-medium transition shadow">
+            Add to Cart
+          </a>
+        {% endif %}
 
         <a href="{% url 'playground:home' %}"
            class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-8 py-3 rounded-lg text-lg transition">
@@ -63,5 +70,77 @@
   </div>
 
 </div>
+
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      for (const cookie of document.cookie.split(';')) {
+        const c = cookie.trim();
+        if (c.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(c.slice(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function showToast(message, success = true) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = [
+      'mb-4 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300',
+      success ? 'bg-green-700 text-green-100' : 'bg-red-700 text-red-100'
+    ].join(' ');
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+  }
+
+  const btn = document.getElementById('add-to-cart-btn');
+  if (btn) {
+    btn.addEventListener('click', async () => {
+      const productId = btn.dataset.productId;
+
+      btn.disabled = true;
+      btn.textContent = 'Adding...';
+
+      try {
+        const res = await fetch('/api/cart/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ product_id: productId, quantity: 1 }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.created) {
+            showToast('Added to cart!');
+        } else {
+          showToast('Already in cart — quantity updated!');
+        }
+        btn.textContent = 'Added!';
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = 'Add to Cart';
+          }, 2000);
+        } else {
+          const data = await res.json();
+          showToast(data.detail || 'Something went wrong', false);
+          btn.disabled = false;
+          btn.textContent = 'Add to Cart';
+        }
+      } catch {
+        showToast('Network error', false);
+        btn.disabled = false;
+        btn.textContent = 'Add to Cart';
+      }
+    });
+  }
+</script>
 
 {% endblock %}
