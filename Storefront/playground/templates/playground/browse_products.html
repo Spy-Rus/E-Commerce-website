@@ -4,95 +4,176 @@
 
 {% block content %}
 
-<h1 class="text-3xl font-semibold text-white mb-8">
-  Browse Products
-</h1>
+<h1 class="text-3xl font-semibold text-white mb-8">Browse Products</h1>
 
 <!-- FILTER FORM -->
-<form method="get"
-      class="bg-gray-800 border border-gray-700 p-6 rounded-2xl mb-10 grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl mb-10 grid grid-cols-1 md:grid-cols-4 gap-4">
 
-  <input type="text"
-         name="q"
+  <input id="search-input"
+         type="text"
          placeholder="Search products..."
-         value="{{ query }}"
+         value="{{ query|default:'' }}"
          class="bg-gray-900 border border-gray-700 text-gray-200 placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
-  <input type="number"
-         name="min_price"
+  <input id="min-price"
+         type="number"
          placeholder="Min price"
-         value="{{ min_price }}"
+         value="{{ min_price|default:'' }}"
          class="bg-gray-900 border border-gray-700 text-gray-200 placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
-  <input type="number"
-         name="max_price"
+  <input id="max-price"
+         type="number"
          placeholder="Max price"
-         value="{{ max_price }}"
+         value="{{ max_price|default:'' }}"
          class="bg-gray-900 border border-gray-700 text-gray-200 placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
-  <select name="sort"
+  <select id="sort-select"
           class="bg-gray-900 border border-gray-700 text-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
     <option value="">Sort</option>
-    <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>
-      Price: Low → High
-    </option>
-    <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>
-      Price: High → Low
-    </option>
-    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>
-      Newest
-    </option>
+    <option value="price_low"  {% if sort == 'price_low' %}selected{% endif %}>Price: Low → High</option>
+    <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High → Low</option>
+    <option value="newest"     {% if sort == 'newest' %}selected{% endif %}>Newest</option>
   </select>
 
-  <button
-    class="md:col-span-4 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-medium transition shadow">
+  <button id="apply-btn"
+          class="md:col-span-4 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-medium transition shadow">
     Apply Filters
   </button>
-</form>
+
+</div>
+
+<!-- STATUS LINE -->
+<p id="result-status" class="text-gray-400 text-sm mb-4 hidden"></p>
 
 <!-- PRODUCTS GRID -->
-{% if products %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+<div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+  {% for product in products %}
+    <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
+      {% if product.image %}
+        <div class="h-40 overflow-hidden">
+          <img src="{{ product.image.url }}"
+               alt="{{ product.title }}"
+               class="w-full h-full object-cover hover:scale-105 transition duration-300">
+        </div>
+      {% else %}
+        <div class="h-40 bg-gray-700 flex items-center justify-center text-gray-400">No image</div>
+      {% endif %}
+      <div class="p-5 flex flex-col gap-2">
+        <h2 class="text-lg font-semibold text-white truncate">{{ product.title }}</h2>
+        <p class="text-blue-400 font-bold">₹{{ product.get_current_price }}</p>
+        <a href="{% url 'playground:product_detail' product.id %}"
+           class="mt-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md transition w-fit">
+          View Details
+        </a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
 
-    {% for product in products %}
+<!-- EMPTY STATE -->
+<p id="empty-message" class="text-gray-400 hidden">No products found.</p>
+
+<script>
+  let debounceTimer = null;
+
+  const searchInput = document.getElementById('search-input');
+  const minPrice    = document.getElementById('min-price');
+  const maxPrice    = document.getElementById('max-price');
+  const sortSelect  = document.getElementById('sort-select');
+  const grid        = document.getElementById('products-grid');
+  const emptyMsg    = document.getElementById('empty-message');
+  const statusLine  = document.getElementById('result-status');
+
+  function buildCard(product) {
+    const imageHtml = product.image
+      ? `<div class="h-40 overflow-hidden">
+           <img src="${product.image}" alt="${product.title}"
+                class="w-full h-full object-cover hover:scale-105 transition duration-300">
+         </div>`
+      : `<div class="h-40 bg-gray-700 flex items-center justify-center text-gray-400">No image</div>`;
+
+    return `
       <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
-
-        {% if product.image %}
-          <div class="h-40 overflow-hidden">
-            <img src="{{ product.image.url }}"
-                 alt="{{ product.title }}"
-                 class="w-full h-full object-cover hover:scale-105 transition duration-300">
-          </div>
-        {% else %}
-          <div class="h-40 bg-gray-700 flex items-center justify-center text-gray-400">
-            No image
-          </div>
-        {% endif %}
-
+        ${imageHtml}
         <div class="p-5 flex flex-col gap-2">
-
-          <h2 class="text-lg font-semibold text-white truncate">
-            {{ product.title }}
-          </h2>
-
-          <p class="text-blue-400 font-bold">
-            ₹{{ product.get_current_price }}
-          </p>
-
-          <a href="{% url 'playground:product_detail' product.id %}"
+          <h2 class="text-lg font-semibold text-white truncate">${product.title}</h2>
+          <p class="text-blue-400 font-bold">₹${parseFloat(product.current_price).toFixed(2)}</p>
+          <a href="/product/${product.id}/"
              class="mt-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md transition w-fit">
             View Details
           </a>
-
         </div>
-      </div>
-    {% endfor %}
+      </div>`;
+  }
 
-  </div>
-{% else %}
-  <p class="text-gray-400">
-    No products found.
-  </p>
-{% endif %}
+  async function fetchProducts() {
+    const params = new URLSearchParams();
+
+    const q    = searchInput.value.trim();
+    const min  = minPrice.value.trim();
+    const max  = maxPrice.value.trim();
+    const sort = sortSelect.value;
+
+    if (q)    params.set('q', q);
+    if (min)  params.set('min_price', min);
+    if (max)  params.set('max_price', max);
+    if (sort) params.set('sort', sort);
+
+    grid.style.opacity = '0.4';
+    statusLine.classList.add('hidden');
+
+    try {
+      const res = await fetch('/products/?' + params.toString(), {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        },
+        credentials: 'same-origin',
+      });
+
+      const text = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error('Response was not JSON:', text.slice(0, 200));
+        grid.style.opacity = '1';
+        return;
+      }
+
+      grid.style.opacity = '1';
+
+      const products = data.products || [];
+
+      if (products.length === 0) {
+        grid.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        statusLine.classList.add('hidden');
+      } else {
+        emptyMsg.classList.add('hidden');
+        grid.innerHTML = products.map(buildCard).join('');
+
+        if (q || min || max || sort) {
+          statusLine.textContent = `${products.length} product${products.length !== 1 ? 's' : ''} found`;
+          statusLine.classList.remove('hidden');
+        }
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+      grid.style.opacity = '1';
+    }
+  }
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(fetchProducts, 400);
+  });
+
+  minPrice.addEventListener('change', fetchProducts);
+  maxPrice.addEventListener('change', fetchProducts);
+  sortSelect.addEventListener('change', fetchProducts);
+  document.getElementById('apply-btn').addEventListener('click', fetchProducts);
+</script>
 
 {% endblock %}
