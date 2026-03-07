@@ -1,61 +1,30 @@
 from rest_framework import serializers
-from playground.models import Product, Order, OrderItem
+from playground.models import Product, Order, OrderItem, CartItem
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    price = serializers.SerializerMethodField()
+    current_price = serializers.SerializerMethodField()
+    seller = serializers.StringRelatedField()
 
     class Meta:
         model = Product
         fields = [
-            'id',
-            'title',
-            'price',
-            'inventory',
-            'available',
+            'id', 'title', 'slug', 'description',
+            'base_price', 'current_price', 'inventory',
+            'available', 'image', 'seller', 'created',
         ]
 
-    def get_price(self, obj):
+    def get_current_price(self, obj):
         return obj.get_current_price()
 
 
-class OrderItemSerializer(serializers.ModelSerializer):
-    product = serializers.StringRelatedField()
+class CartItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
-        model = OrderItem
-        fields = [
-            'product',
-            'quantity',
-            'price_at_purchase',
-            'status',
-        ]
+        model = CartItem
+        fields = ['id', 'product', 'quantity', 'total_price']
 
-
-class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Order
-        fields = [
-            'id',
-            'total_price',
-            'status',
-            'created_at',
-            'items',
-        ]
-
-class OrderItemCreateSerializer(serializers.Serializer):
-    product = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all()
-    )
-    quantity = serializers.IntegerField(min_value=1)
-
-
-class CreateOrderSerializer(serializers.Serializer):
-    items = OrderItemCreateSerializer(many=True)
-
-    def validate_items(self, items):
-        if not items:
-            raise serializers.ValidationError("Order cannot be empty")
-        return items
+    def get_total_price(self, obj):
+        return obj.get_total_price()
