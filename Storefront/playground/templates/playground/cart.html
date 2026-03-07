@@ -4,101 +4,167 @@
 
 {% block content %}
 
-<h1 class="text-3xl font-semibold text-white mb-10">
-  Your Cart
-</h1>
+<h1 class="text-3xl font-semibold text-white mb-10">Your Cart</h1>
 
 {% if items %}
-  <div class="space-y-6">
+<div id="cart-container" class="space-y-6">
 
-    {% for item in items %}
-      <!-- CART ITEM -->
-      <div class="flex items-center gap-6 bg-gray-800 border border-gray-700 p-5 rounded-xl shadow-md">
+  {% for item in items %}
+  <div class="cart-item flex items-center gap-6 bg-gray-800 border border-gray-700 p-5 rounded-xl shadow-md transition-all duration-300"
+       data-product-id="{{ item.product.id }}"
+       data-inventory="{{ item.product.inventory }}">
 
-        <!-- Product Image -->
-        {% if item.product.image %}
-          <img src="{{ item.product.image.url }}"
-               alt="{{ item.product.title }}"
-               class="w-24 h-24 object-cover rounded-lg">
-        {% else %}
-          <div class="w-24 h-24 bg-gray-700 flex items-center justify-center rounded-lg text-gray-400 text-sm">
-            No image
-          </div>
-        {% endif %}
-
-        <!-- Product Info -->
-        <div class="flex-1">
-          <h2 class="text-lg font-semibold text-white">
-            {{ item.product.title }}
-          </h2>
-
-          <p class="text-gray-400 mt-1">
-            Price: ₹{{ item.product.get_current_price }}
-          </p>
-
-          <!-- Quantity Controls -->
-          <div class="flex items-center gap-3 mt-4">
-            <a href="{% url 'playground:decrease_cart' item.product.id %}"
-               class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition">
-              −
-            </a>
-
-            <span class="font-semibold text-gray-200 min-w-[24px] text-center">
-              {{ item.quantity }}
-            </span>
-
-            {% if item.quantity < item.product.inventory %}
-              <a href="{% url 'playground:increase_cart' item.product.id %}"
-                 class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition">
-                +
-              </a>
-            {% else %}
-              <span class="text-xs text-red-400">Max</span>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Item Total -->
-        <div class="text-right">
-          <p class="text-lg font-bold text-blue-400">
-            ₹{{ item.total }}
-          </p>
-
-          <a href="{% url 'playground:remove_from_cart' item.product.id %}"
-             class="text-sm text-red-400 hover:text-red-300 transition">
-            Remove
-          </a>
-        </div>
-
+    {% if item.product.image %}
+      <img src="{{ item.product.image.url }}"
+           alt="{{ item.product.title }}"
+           class="w-24 h-24 object-cover rounded-lg flex-shrink-0">
+    {% else %}
+      <div class="w-24 h-24 bg-gray-700 flex items-center justify-center rounded-lg text-gray-400 text-sm flex-shrink-0">
+        No image
       </div>
-    {% endfor %}
+    {% endif %}
 
-    <!-- CART SUMMARY -->
-    <div class="flex justify-between items-center border-t border-gray-700 pt-8 mt-8">
+    <div class="flex-1">
+      <h2 class="text-lg font-semibold text-white">{{ item.product.title }}</h2>
+      <p class="text-gray-400 mt-1">Price: ₹{{ item.product.get_current_price }}</p>
 
-      <p class="text-xl font-semibold text-white">
-        Total: <span class="text-blue-400">₹{{ total }}</span>
-      </p>
+      <div class="flex items-center gap-3 mt-4">
+        <button class="decrease-btn px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition">−</button>
+        <span class="qty-display font-semibold text-gray-200 min-w-[24px] text-center">{{ item.quantity }}</span>
+        <button class="increase-btn px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition"
+                {% if item.quantity >= item.product.inventory %}disabled{% endif %}>
+          {% if item.quantity >= item.product.inventory %}<span class="text-xs text-red-400">Max</span>{% else %}+{% endif %}
+        </button>
+      </div>
+    </div>
 
-      {% if user.is_authenticated %}
-        <a href="{% url 'playground:checkout' %}"
-           class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition shadow">
-          Proceed to Checkout
-        </a>
-      {% else %}
-        <a href="{% url 'playground:login' %}?next={% url 'playground:cart' %}"
-           class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition shadow">
-          Login to Checkout
-        </a>
-      {% endif %}
+    <div class="text-right flex-shrink-0">
+      <p class="item-total text-lg font-bold text-blue-400">₹{{ item.total }}</p>
+      <button class="remove-btn text-sm text-red-400 hover:text-red-300 transition mt-1">Remove</button>
     </div>
 
   </div>
+  {% endfor %}
+
+</div>
+
+<p id="empty-message" class="text-gray-400 hidden">Your cart is empty.</p>
+
+<div id="cart-summary" class="flex justify-between items-center border-t border-gray-700 pt-8 mt-8">
+  <p class="text-xl font-semibold text-white">
+    Total: <span id="cart-total" class="text-blue-400">₹{{ total }}</span>
+  </p>
+  {% if user.is_authenticated %}
+    <a href="{% url 'playground:checkout' %}"
+       class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition shadow">
+      Proceed to Checkout
+    </a>
+  {% else %}
+    <a href="{% url 'playground:login' %}?next={% url 'playground:cart' %}"
+       class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition shadow">
+      Login to Checkout
+    </a>
+  {% endif %}
+</div>
 
 {% else %}
-  <p class="text-gray-400">
-    Your cart is empty.
-  </p>
+  <p id="empty-message" class="text-gray-400">Your cart is empty.</p>
 {% endif %}
+
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      for (const cookie of document.cookie.split(';')) {
+        const c = cookie.trim();
+        if (c.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(c.slice(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const CSRF = getCookie('csrftoken');
+
+  async function refreshTotal() {
+    const data = await fetch('/api/cart/', { credentials: 'same-origin' }).then(r => r.json());
+    const totalEl = document.getElementById('cart-total');
+    if (totalEl) totalEl.textContent = '₹' + parseFloat(data.total).toFixed(2);
+    if (data.items.length === 0) showEmptyState();
+  }
+
+  function showEmptyState() {
+    const container = document.getElementById('cart-container');
+    const summary = document.getElementById('cart-summary');
+    const empty = document.getElementById('empty-message');
+    if (container) container.remove();
+    if (summary) summary.remove();
+    if (empty) empty.classList.remove('hidden');
+  }
+
+  function removeRow(row) {
+    row.style.transition = 'opacity 0.3s, transform 0.3s';
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+      row.remove();
+      if (document.querySelectorAll('.cart-item').length === 0) showEmptyState();
+    }, 300);
+  }
+
+  document.querySelectorAll('.cart-item').forEach(row => {
+    const productId = row.dataset.productId;
+    const inventory = parseInt(row.dataset.inventory);
+
+    row.querySelector('.increase-btn').addEventListener('click', async () => {
+      const res = await fetch('/api/cart/' + productId + '/increase/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+        credentials: 'same-origin',
+      });
+      const data = await res.json();
+      const newQty = data.quantity;
+      row.querySelector('.qty-display').textContent = newQty;
+      row.querySelector('.item-total').textContent = '₹' + parseFloat(data.total_price).toFixed(2);
+      const increaseBtn = row.querySelector('.increase-btn');
+      if (newQty >= inventory) {
+        increaseBtn.disabled = true;
+        increaseBtn.innerHTML = '<span class="text-xs text-red-400">Max</span>';
+      }
+      await refreshTotal();
+    });
+
+    row.querySelector('.decrease-btn').addEventListener('click', async () => {
+      const res = await fetch('/api/cart/' + productId + '/decrease/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+        credentials: 'same-origin',
+      });
+      if (res.status === 204) {
+        removeRow(row);
+        await refreshTotal();
+        return;
+      }
+      const data = await res.json();
+      row.querySelector('.qty-display').textContent = data.quantity;
+      const increaseBtn = row.querySelector('.increase-btn');
+      increaseBtn.disabled = false;
+      increaseBtn.innerHTML = '+';
+      await refreshTotal();
+    });
+
+    row.querySelector('.remove-btn').addEventListener('click', async () => {
+      await fetch('/api/cart/' + productId + '/', {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': CSRF },
+        credentials: 'same-origin',
+      });
+      removeRow(row);
+      await refreshTotal();
+    });
+  });
+</script>
 
 {% endblock %}
