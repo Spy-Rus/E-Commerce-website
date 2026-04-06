@@ -9,7 +9,6 @@
 </h1>
 
 <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg">
-
   <table class="w-full text-sm">
 
     <!-- TABLE HEADER -->
@@ -28,44 +27,41 @@
       {% for item in order_items %}
         <tr class="border-t border-gray-800 hover:bg-gray-800 transition">
 
-          <td class="p-4 text-gray-300">
-            #{{ item.order.id }}
-          </td>
+          <td class="p-4 text-gray-300">#{{ item.order.id }}</td>
 
-          <td class="p-4 text-gray-200">
-            {{ item.product.title }}
-          </td>
+          <td class="p-4 text-gray-200">{{ item.product.title }}</td>
 
-          <td class="p-4 text-gray-300">
-            {{ item.quantity }}
-          </td>
+          <td class="p-4 text-gray-300">{{ item.quantity }}</td>
 
           <td class="p-4 capitalize">
             {% if item.status == "pending" %}
-              <span class="text-yellow-400 font-medium">
-                Pending
-              </span>
+              <span class="text-yellow-400 font-medium">Pending</span>
             {% elif item.status == "shipped" %}
-              <span class="text-blue-400 font-medium">
-                Shipped
-              </span>
+              <span class="text-blue-400 font-medium">Shipped</span>
             {% elif item.status == "delivered" %}
-              <span class="text-green-400 font-medium">
-                Delivered
-              </span>
+              <span class="text-green-400 font-medium">Delivered</span>
             {% else %}
-              <span class="text-gray-400">
-                {{ item.status }}
-              </span>
+              <span class="text-gray-400">{{ item.status }}</span>
             {% endif %}
           </td>
 
           <td class="p-4">
             {% if item.status == "pending" %}
-              <a href="{% url 'playground:mark_shipped' item.id %}"
-                 class="text-blue-400 hover:text-blue-300 font-medium transition">
+              <button
+                data-id="{{ item.id }}"
+                data-status="shipped"
+                onclick="updateStatus(this)"
+                class="text-blue-400 hover:text-blue-300 font-medium transition">
                 Mark shipped
-              </a>
+              </button>
+            {% elif item.status == "shipped" %}
+              <button
+                data-id="{{ item.id }}"
+                data-status="delivered"
+                onclick="updateStatus(this)"
+                class="text-green-400 hover:text-green-300 font-medium transition">
+                Mark delivered
+              </button>
             {% else %}
               <span class="text-gray-500">—</span>
             {% endif %}
@@ -74,8 +70,7 @@
         </tr>
       {% empty %}
         <tr>
-          <td colspan="5"
-              class="p-8 text-center text-gray-500">
+          <td colspan="5" class="p-8 text-center text-gray-500">
             No orders yet 🚫
           </td>
         </tr>
@@ -83,7 +78,48 @@
     </tbody>
 
   </table>
-
 </div>
 
+<script>
+function getCSRFToken() {
+  return document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1];
+}
+
+function updateStatus(btn) {
+  const itemId = btn.dataset.id;
+  const newStatus = btn.dataset.status;
+
+  const originalText = btn.textContent;
+
+  btn.disabled = true;
+  btn.textContent = 'Updating...';
+
+  fetch(`/api/seller/order-item/${itemId}/status/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken(),
+    },
+    body: JSON.stringify({ status: newStatus }),
+  })
+  .then(async (res) => {
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || 'Failed to update status');
+    }
+    return res.json();
+  })
+  .then(data => {
+    location.reload();
+  })
+  .catch(err => {
+    alert(err.message);
+    btn.disabled = false;
+    btn.textContent = originalText;
+  });
+}
+</script>
 {% endblock %}
